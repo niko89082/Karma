@@ -4,8 +4,6 @@ import {
   createServerClient,
   type CookieOptions,
 } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Browser client — use inside client components
@@ -21,9 +19,14 @@ export const createClientBrowser = () =>
  * Server Component client (read-only cookies)
  * Use inside layouts/pages (App Router server components)
  * This version CANNOT modify cookies (no set/remove)
+ * 
+ * NOTE: This function must be imported dynamically in server components
+ * or wrapped in an async function to avoid build errors
  */
-export function createClientServer() {
-  const cookieStore = cookies();
+export async function createClientServer() {
+  // Dynamic import to avoid build-time issues
+  const { cookies } = await import("next/headers");
+  const cookieStore = await cookies();
   
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,31 +39,6 @@ export function createClientServer() {
         // Server Components cannot modify cookies — no-ops here
         set(_name: string, _value: string, _options: CookieOptions) {},
         remove(_name: string, _options: CookieOptions) {},
-      },
-    }
-  );
-}
-
-/**
- * Route Handler / Server Action client (read-write cookies)
- * Use inside files under /app/api/.../route.ts
- * This version CAN modify cookies
- */
-export function createClientRoute(req: NextRequest, res: NextResponse) {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          res.cookies.set(name, value, options as any);
-        },
-        remove(name: string, options: CookieOptions) {
-          res.cookies.set(name, "", { ...(options as any), maxAge: 0 });
-        },
       },
     }
   );

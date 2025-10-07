@@ -184,3 +184,4 @@ Before deploying:
 - [ ] Add rate limiting
 - [ ] Set up backup strategy
 - [ ] Configure PWA manifest for installability# Karma
+# Karma
